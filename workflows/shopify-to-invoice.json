@@ -1,0 +1,194 @@
+{
+  "name": "FacturaHub · Shopify → Factura automática",
+  "nodes": [
+    {
+      "parameters": {
+        "topic": "orders/paid"
+      },
+      "id": "a1f0c0d1-1111-4a11-8a11-shopifytrigg01",
+      "name": "Shopify Trigger",
+      "type": "n8n-nodes-base.shopifyTrigger",
+      "typeVersion": 1,
+      "position": [
+        -360,
+        300
+      ],
+      "credentials": {
+        "shopifyApi": {
+          "id": "REEMPLAZA_CREDENCIAL_SHOPIFY",
+          "name": "Shopify account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "cond-paid-01",
+              "leftValue": "={{ $json.financial_status }}",
+              "rightValue": "paid",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "b2f0c0d2-2222-4b22-8b22-ifpaidcheck02",
+      "name": "IF pedido pagado",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -120,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.facturahub.com/api/clients",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  name: ($json.customer.default_address && $json.customer.default_address.company) || ((($json.customer.first_name || '') + ' ' + ($json.customer.last_name || '')).trim()),\n  taxId: '',\n  email: $json.customer.email || $json.email,\n  address: $json.billing_address ? [$json.billing_address.address1, $json.billing_address.zip, $json.billing_address.city].filter(Boolean).join(', ') : '',\n  country: ($json.billing_address && $json.billing_address.country_code) || 'ES'\n}) }}",
+        "options": {}
+      },
+      "id": "c3f0c0d3-3333-4c33-8c33-createclient03",
+      "name": "Crear cliente en FacturaHub",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        140,
+        200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REEMPLAZA_CREDENCIAL_FACTURAHUB",
+          "name": "FacturaHub API Key (x-api-key)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.facturahub.com/api/invoices",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  clientId: $json._id,\n  items: $('IF pedido pagado').item.json.line_items.map(li => ({\n    description: li.title + (li.variant_title ? ' - ' + li.variant_title : ''),\n    quantity: Number(li.quantity),\n    unitPrice: Number(li.price),\n    taxRate: 21\n  })),\n  retentionRate: 0,\n  currency: ($('IF pedido pagado').item.json.currency || 'EUR'),\n  status: 'draft'\n}) }}",
+        "options": {}
+      },
+      "id": "d4f0c0d4-4444-4d44-8d44-createinvoice4",
+      "name": "Crear factura en FacturaHub",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REEMPLAZA_CREDENCIAL_FACTURAHUB",
+          "name": "FacturaHub API Key (x-api-key)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.facturahub.com/api/invoices/{{ $json._id }}/send",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "e5f0c0d5-5555-4e55-8e55-sendinvoice055",
+      "name": "Enviar factura por email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REEMPLAZA_CREDENCIAL_FACTURAHUB",
+          "name": "FacturaHub API Key (x-api-key)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Shopify Trigger": {
+      "main": [
+        [
+          {
+            "node": "IF pedido pagado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF pedido pagado": {
+      "main": [
+        [
+          {
+            "node": "Crear cliente en FacturaHub",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Crear cliente en FacturaHub": {
+      "main": [
+        [
+          {
+            "node": "Crear factura en FacturaHub",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear factura en FacturaHub": {
+      "main": [
+        [
+          {
+            "node": "Enviar factura por email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": [
+    {
+      "name": "facturahub"
+    },
+    {
+      "name": "shopify"
+    }
+  ]
+}

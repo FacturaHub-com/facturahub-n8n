@@ -1,0 +1,173 @@
+{
+  "name": "FacturaHub · Webhook genérico → Factura automática",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "facturahub-invoice",
+        "options": {}
+      },
+      "id": "a1f0c0d1-1111-4a11-8a11-webhookentry01",
+      "name": "Webhook (POST entrante)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -360,
+        300
+      ],
+      "webhookId": "facturahub-invoice"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.facturahub.com/api/clients",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  name: $json.body.client.name,\n  taxId: ($json.body.client.taxId || ''),\n  email: ($json.body.client.email || ''),\n  address: ($json.body.client.address || ''),\n  country: ($json.body.client.country || 'ES')\n}) }}",
+        "options": {}
+      },
+      "id": "c3f0c0d3-3333-4c33-8c33-createclient03",
+      "name": "Crear cliente en FacturaHub",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -100,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REEMPLAZA_CREDENCIAL_FACTURAHUB",
+          "name": "FacturaHub API Key (x-api-key)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.facturahub.com/api/invoices",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  clientId: $json._id,\n  items: $('Webhook (POST entrante)').item.json.body.items.map(it => ({\n    description: it.description,\n    quantity: Number(it.quantity),\n    unitPrice: Number(it.unitPrice),\n    taxRate: (it.taxRate != null ? Number(it.taxRate) : 21)\n  })),\n  retentionRate: Number($('Webhook (POST entrante)').item.json.body.retentionRate || 0),\n  currency: ($('Webhook (POST entrante)').item.json.body.currency || 'EUR'),\n  status: 'draft'\n}) }}",
+        "options": {}
+      },
+      "id": "d4f0c0d4-4444-4d44-8d44-createinvoice4",
+      "name": "Crear factura en FacturaHub",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        160,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REEMPLAZA_CREDENCIAL_FACTURAHUB",
+          "name": "FacturaHub API Key (x-api-key)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.facturahub.com/api/invoices/{{ $json._id }}/send",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "e5f0c0d5-5555-4e55-8e55-sendinvoice055",
+      "name": "Enviar factura por email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        420,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REEMPLAZA_CREDENCIAL_FACTURAHUB",
+          "name": "FacturaHub API Key (x-api-key)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, invoiceId: $('Crear factura en FacturaHub').item.json._id, number: $('Crear factura en FacturaHub').item.json.number }) }}",
+        "options": {}
+      },
+      "id": "f6f0c0d6-6666-4f66-8f66-respondnode066",
+      "name": "Responder al origen",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        680,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook (POST entrante)": {
+      "main": [
+        [
+          {
+            "node": "Crear cliente en FacturaHub",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear cliente en FacturaHub": {
+      "main": [
+        [
+          {
+            "node": "Crear factura en FacturaHub",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear factura en FacturaHub": {
+      "main": [
+        [
+          {
+            "node": "Enviar factura por email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar factura por email": {
+      "main": [
+        [
+          {
+            "node": "Responder al origen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": [
+    {
+      "name": "facturahub"
+    },
+    {
+      "name": "webhook"
+    }
+  ]
+}
