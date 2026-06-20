@@ -1,5 +1,7 @@
 # FacturaHub + n8n — automatiza tu facturación sin código
 
+**Parte del ecosistema [FacturaHub](https://facturahub.com?utm_source=github&utm_medium=referral&utm_campaign=n8n)** — facturación en España, **Verifactu**, **IVA**, **Modelo 303** y automatización fiscal con IA.
+
 Workflows listos para **automatizar tu facturación con [n8n](https://n8n.io)** y la API de [FacturaHub](https://facturahub.com): cuando se paga un pedido en tu tienda (WooCommerce, Shopify) o llega un evento de cualquier ERP, n8n crea el cliente, genera la factura y la envía por email. **Cero código.**
 
 > **n8n facturación** · **WooCommerce factura automática n8n** · **Shopify factura n8n** · **automatizar facturas España**
@@ -136,3 +138,13 @@ Devuelve `{ "_id": "...", "number": "...", ... }`.
 ## Licencia
 
 MIT. Úsalo, modifícalo y compártelo libremente.
+
+## Ecosistema FacturaHub
+- 🌐 [FacturaHub](https://facturahub.com?utm_source=github&utm_medium=referral&utm_campaign=n8n) — la app (gratis, Verifactu incluido)
+- 🔌 [facturahub-api](https://github.com/FacturaHub-com/facturahub-api) — API REST + OpenAPI 3.1
+- 🤖 [facturahub-mcp](https://github.com/FacturaHub-com/facturahub-mcp) — servidor MCP (Claude, Cursor, ChatGPT)
+- 🧾 [facturahub-verifactu](https://github.com/FacturaHub-com/facturahub-verifactu) — Verifactu por API
+- 🧮 Librerías: nif-validator · iva · iban-es · factura-number · verifactu-qr · verifactu-hash · modelo-303
+- ⚙️ Automatización: facturahub-n8n · n8n-nodes-facturahub · facturahub-woocommerce · facturahub-shopify
+
+Temas: Verifactu · Facturación electrónica · IVA · Modelo 303 · AEAT · NIF/CIF · Autónomos · MCP · IA · España
